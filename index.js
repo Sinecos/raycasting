@@ -4,11 +4,29 @@ class Vector2 {
         this.x = x;
         this.y = y;
     }
+    add(that) {
+        return new Vector2(this.x + that.x, this.y + that.y);
+    }
+    sub(that) {
+        return new Vector2(this.x - that.x, this.y - that.y);
+    }
     div(that) {
         return new Vector2(this.x / that.x, this.y / that.y);
     }
     mul(that) {
         return new Vector2(this.x * that.x, this.y * that.y);
+    }
+    lenght() {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+    norm() {
+        const l = this.lenght();
+        if (l == 0)
+            return new Vector2(0, 0);
+        return new Vector2(this.x / l, this.y / l);
+    }
+    scale(value) {
+        return new Vector2(this.x * value, this.y * value);
     }
     array() {
         return [this.x, this.y];
@@ -32,7 +50,8 @@ function strokeLine(ctx, p1, p2) {
     ctx.stroke();
 }
 function rayStep(p1, p2) {
-    return p2;
+    // p2.sub(p1).norm() is direction with lengh of 1 and add p2
+    return p2.sub(p1).norm().add(p2);
 }
 function grid(ctx, p2) {
     ctx.reset();
@@ -54,6 +73,9 @@ function grid(ctx, p2) {
         fillCircle(ctx, p2, 0.2);
         ctx.strokeStyle = "magenta";
         strokeLine(ctx, p1, p2);
+        const p3 = rayStep(p1, p2);
+        fillCircle(ctx, p3, 0.2);
+        strokeLine(ctx, p2, p3);
     }
 }
 (() => {

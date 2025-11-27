@@ -5,11 +5,28 @@ class Vector2 {
         this.x = x;
         this.y = y;
     }
+    add(that: Vector2) : Vector2 {
+        return new Vector2(this.x + that.x, this.y + that.y);
+    }
+    sub(that: Vector2) : Vector2 {
+        return new Vector2(this.x - that.x, this.y - that.y);
+    }
     div(that: Vector2) : Vector2 {
-        return new Vector2(this.x / that.x, this.y/ that.y);
+        return new Vector2(this.x / that.x, this.y / that.y);
     }
     mul(that: Vector2) : Vector2 {
         return new Vector2(this.x * that.x, this.y * that.y);
+    }
+    lenght(): number {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+    norm(): Vector2 {
+        const l = this.lenght();
+        if(l == 0) return new Vector2(0,0);
+        return new Vector2(this.x / l, this.y / l)
+    }
+    scale(value: number): Vector2 {
+        return new Vector2(this.x * value, this.y * value)
     }
     array(): [number, number] {
         return [this.x, this.y]
@@ -38,13 +55,14 @@ function strokeLine (ctx: CanvasRenderingContext2D, p1: Vector2, p2: Vector2) {
 }
 
 function rayStep (p1: Vector2, p2: Vector2): Vector2 {
-    return p2;
+    // p2.sub(p1).norm() is direction with lengh of 1 and add p2
+    return p2.sub(p1).norm().add(p2);
 }
 
 
 function grid(ctx: CanvasRenderingContext2D, p2: Vector2 | undefined) {
     ctx.reset();
-    
+
     ctx.fillStyle = "#181818";
     ctx.fillRect(0,0, ...canvasSize(ctx).array());
 
@@ -67,6 +85,11 @@ function grid(ctx: CanvasRenderingContext2D, p2: Vector2 | undefined) {
         fillCircle(ctx, p2, 0.2);
         ctx.strokeStyle = "magenta"
         strokeLine(ctx, p1, p2);
+        
+        const p3 = rayStep(p1, p2);
+        fillCircle(ctx, p3, 0.2);
+        strokeLine(ctx, p2, p3);
+
     }
 }
 
