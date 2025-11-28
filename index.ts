@@ -54,9 +54,23 @@ function strokeLine (ctx: CanvasRenderingContext2D, p1: Vector2, p2: Vector2) {
     ctx.stroke();
 }
 
-function rayStep (p1: Vector2, p2: Vector2): Vector2 {
-    // p2.sub(p1).norm() is direction with lengh of 1 and add p2
-    return p2.sub(p1).norm().add(p2);
+function snap(x:number, dx:number){
+    if(dx > 0) return Math.ceil(x);
+    if(dx < 0) return Math.floor(x);
+    return x;
+}
+
+function rayStep (ctx: CanvasRenderingContext2D, p1: Vector2, p2: Vector2): Vector2 {
+    const d = p2.sub(p1);
+    if(d.x != 0) {
+        const k = d.y/d.x;
+        const c = p1.y - k * p1.x;
+        const x3 = snap(p2.x, d.x);
+        const y3 = x3*k + c;
+        ctx.fillStyle = "red";
+        fillCircle(ctx, new Vector2(x3,y3), 0.2);
+    }
+    return p2;
 }
 
 
@@ -78,7 +92,6 @@ function grid(ctx: CanvasRenderingContext2D, p2: Vector2 | undefined) {
     }
 
     const p1 = new Vector2(GRID_COLS * 0.43, GRID_ROWS * 0.33);
-
     ctx.fillStyle = "magenta"
     fillCircle(ctx, p1, 0.2);
     if(p2 !== undefined){
@@ -86,7 +99,8 @@ function grid(ctx: CanvasRenderingContext2D, p2: Vector2 | undefined) {
         ctx.strokeStyle = "magenta"
         strokeLine(ctx, p1, p2);
         
-        const p3 = rayStep(p1, p2);
+        const p3 = rayStep(ctx, p1, p2);
+        ctx.fillStyle = "magenta"
         fillCircle(ctx, p3, 0.2);
         strokeLine(ctx, p2, p3);
 
