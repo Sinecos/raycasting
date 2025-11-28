@@ -28,6 +28,9 @@ class Vector2 {
     scale(value) {
         return new Vector2(this.x * value, this.y * value);
     }
+    distanceTo(that) {
+        return that.sub(this).lenght();
+    }
     array() {
         return [this.x, this.y];
     }
@@ -40,7 +43,7 @@ function canvasSize(ctx) {
 }
 function fillCircle(ctx, center, radius) {
     ctx.beginPath();
-    ctx.arc(...center.array(), 0.2, 0, 2 * Math.PI);
+    ctx.arc(...center.array(), radius, 0, 2 * Math.PI);
     ctx.fill();
 }
 function strokeLine(ctx, p1, p2) {
@@ -49,24 +52,40 @@ function strokeLine(ctx, p1, p2) {
     ctx.lineTo(...p2.array());
     ctx.stroke();
 }
-function snap(x, dx) {
+function snap(x, dx, eps) {
     if (dx > 0)
-        return Math.ceil(x);
+        return Math.ceil(x + Math.sign(dx) * eps);
     if (dx < 0)
-        return Math.floor(x);
+        return Math.floor(x + Math.sign(dx) * eps);
     return x;
 }
-function rayStep(ctx, p1, p2) {
+function rayStep(p1, p2) {
+    const eps = 1e-3;
+    let p3 = p2;
     const d = p2.sub(p1);
-    if (d.x != 0) {
+    if (d.x !== 0) {
         const k = d.y / d.x;
         const c = p1.y - k * p1.x;
-        const x3 = snap(p2.x, d.x);
-        const y3 = x3 * k + c;
-        ctx.fillStyle = "red";
-        fillCircle(ctx, new Vector2(x3, y3), 0.2);
+        {
+            const x3 = snap(p2.x, d.x, eps);
+            const y3 = x3 * k + c;
+            p3 = new Vector2(x3, y3);
+        }
+        if (k !== 0) {
+            const y3 = snap(p2.y, d.y, eps);
+            const x3 = (y3 - c) / k;
+            const p3t = new Vector2(x3, y3);
+            if (p2.distanceTo(p3t) < p2.distanceTo(p3)) {
+                p3 = p3t;
+            }
+        }
     }
-    return p2;
+    else {
+        const y3 = snap(p2.y, d.y, eps);
+        const x3 = p2.x;
+        p3 = new Vector2(x3, y3);
+    }
+    return p3;
 }
 function grid(ctx, p2) {
     ctx.reset();
@@ -81,17 +100,18 @@ function grid(ctx, p2) {
     for (let y = 0; y <= GRID_ROWS; ++y) {
         strokeLine(ctx, new Vector2(0, y), new Vector2(GRID_COLS, y));
     }
-    const p1 = new Vector2(GRID_COLS * 0.43, GRID_ROWS * 0.33);
+    let p1 = new Vector2(GRID_COLS * 0.43, GRID_ROWS * 0.33);
     ctx.fillStyle = "magenta";
     fillCircle(ctx, p1, 0.2);
     if (p2 !== undefined) {
-        fillCircle(ctx, p2, 0.2);
-        ctx.strokeStyle = "magenta";
-        strokeLine(ctx, p1, p2);
-        const p3 = rayStep(ctx, p1, p2);
-        ctx.fillStyle = "magenta";
-        fillCircle(ctx, p3, 0.2);
-        strokeLine(ctx, p2, p3);
+        for (let i = 0; i < 5; ++i) {
+            fillCircle(ctx, p2, 0.2);
+            ctx.strokeStyle = "magenta";
+            strokeLine(ctx, p1, p2);
+            const p3 = rayStep(p1, p2);
+            p1 = p2;
+            p2 = p3;
+        }
     }
 }
 (() => {
