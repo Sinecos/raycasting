@@ -55,40 +55,20 @@ function strokeLine(ctx, p1, p2) {
 }
 function snap(x, dx) {
     if (dx > 0)
-        return Math.ceil(x + Math.sign(dx) * EPS);
+        return Math.ceil(x);
     if (dx < 0)
-        return Math.floor(x + Math.sign(dx) * EPS);
+        return Math.floor(x);
     return x;
 }
-function hittingCell(p1, p2) {
-    const d = p2.sub(p1);
-    return new Vector2(Math.floor(p2.x + Math.sign(d.x) * EPS), // x of the ceil
-    Math.floor(p2.y + Math.sign(d.y) * EPS)); // y of the ceil
-}
-function rayStep(p1, p2) {
-    let p3 = p2;
+function rayStep(ctx, p1, p2) {
     const d = p2.sub(p1);
     if (d.x !== 0) {
         const k = d.y / d.x;
         const c = p1.y - k * p1.x;
-        {
-            const x3 = snap(p2.x, d.x);
-            const y3 = x3 * k + c;
-            p3 = new Vector2(x3, y3);
-        }
-        if (k !== 0) {
-            const y3 = snap(p2.y, d.y);
-            const x3 = (y3 - c) / k;
-            const p3t = new Vector2(x3, y3);
-            if (p2.distanceTo(p3t) < p2.distanceTo(p3)) {
-                p3 = p3t;
-            }
-        }
-    }
-    else {
-        const y3 = snap(p2.y, d.y);
-        const x3 = p2.x;
-        p3 = new Vector2(x3, y3);
+        const x3 = snap(p2.x, d.x);
+        const y3 = x3 * k + c;
+        ctx.fillStyle = "red";
+        fillCircle(ctx, new Vector2(x3, y3), 0.2);
     }
     return p3;
 }
@@ -109,18 +89,13 @@ function grid(ctx, p2) {
     ctx.fillStyle = "magenta";
     fillCircle(ctx, p1, 0.2);
     if (p2 !== undefined) {
-        for (;;) {
-            fillCircle(ctx, p2, 0.2);
-            ctx.strokeStyle = "magenta";
-            strokeLine(ctx, p1, p2);
-            const c = hittingCell(p1, p2);
-            if (c.x < 0 || c.x >= GRID_SIZE.x || c.y < 0 || c.y >= GRID_SIZE.y) {
-                break;
-            }
-            const p3 = rayStep(p1, p2);
-            p1 = p2;
-            p2 = p3;
-        }
+        fillCircle(ctx, p2, 0.2);
+        ctx.strokeStyle = "magenta";
+        strokeLine(ctx, p1, p2);
+        const p3 = rayStep(ctx, p1, p2);
+        ctx.fillStyle = "magenta";
+        fillCircle(ctx, p3, 0.2);
+        strokeLine(ctx, p2, p3);
     }
 }
 (() => {
