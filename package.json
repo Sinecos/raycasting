@@ -17,6 +17,10 @@
   "homepage": "https://github.com/Sinecos/raycasting#readme",
   "description": "",
   "devDependencies": {
+    "tslint": "^5.20.1",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "eslint": "^9.39.1"
   }
 }

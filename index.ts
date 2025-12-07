@@ -5,6 +5,10 @@ class Vector2 {
         this.x = x;
         this.y = y;
     }
+    static zero(): Vector2 {
+	return new Vector2(0,0);
+    }
+    
     add(that: Vector2) : Vector2 {
         return new Vector2(this.x + that.x, this.y + that.y);
     }
@@ -37,10 +41,6 @@ class Vector2 {
 }
 
 const EPS = 1e-3;
-const GRID_ROWS = 10;
-const GRID_COLS = 10;
-const GRID_SIZE = new Vector2(GRID_COLS, GRID_ROWS);
-let scene = Array(GRID_ROWS).fill(0).map(() => Array(GRID_COLS).fill(0));
 
 function canvasSize(ctx: CanvasRenderingContext2D): Vector2 {
     return new Vector2(ctx.canvas.width, ctx.canvas.height);
@@ -103,17 +103,33 @@ function rayStep (p1: Vector2, p2: Vector2): Vector2 {
     return p3;
 }
 
-function grid(ctx: CanvasRenderingContext2D, p2: Vector2 | undefined) {
+type Scene = Array<Array<number>>;
+
+function sceneSize(scene: Scene) : Vector2 {
+    const y = scene.length;
+    let x = Number.MIN_VALUE;
+    for (let row of scene) {
+	x = Math.max(x, row.length);
+    }
+    
+    return new Vector2(x,y);
+}
+
+function minimap(ctx: CanvasRenderingContext2D, p2: Vector2 | undefined,
+		 position: Vector2, size: Vector2, scene: Scene) {
+
     ctx.reset();
-
     ctx.fillStyle = "#181818";
-    ctx.fillRect(0,0, ...canvasSize(ctx).array());
+    ctx.fillRect(0,0, ...canvasSize(ctx).array());size.div(sceneSize(scene))
 
-    ctx.scale(ctx.canvas.width / GRID_COLS, ctx.canvas.height / GRID_ROWS);
+    const gridSize = sceneSize(scene);
+
+    ctx.scale(...size.div(gridSize).array());
+    ctx.translate(...position.array());
     ctx.lineWidth = 0.02;
 
-    for(let y = 0; y < GRID_ROWS; ++y) {
-	for(let x = 0; x < GRID_COLS; ++x) {
+    for(let y = 0; y < gridSize.y; ++y) {
+	for(let x = 0; x < gridSize.x; ++x) {
 	    if(scene[y][x] !== 0) {
 		ctx.fillStyle = "#303030"
 		ctx.fillRect(x,y, 1, 1);
@@ -122,14 +138,14 @@ function grid(ctx: CanvasRenderingContext2D, p2: Vector2 | undefined) {
     }
 
     ctx.strokeStyle = "#303030"
-    for(let x = 0; x <= GRID_COLS; ++x){
-        strokeLine(ctx, new Vector2(x, 0), new Vector2(x, GRID_ROWS));
+    for(let x = 0; x <= gridSize.x; ++x){
+        strokeLine(ctx, new Vector2(x, 0), new Vector2(x, gridSize.y));
     }
-    for(let y = 0; y <= GRID_ROWS; ++y){
-        strokeLine(ctx, new Vector2(0, y), new Vector2(GRID_COLS, y));
+    for(let y = 0; y <= gridSize.y; ++y){
+        strokeLine(ctx, new Vector2(0, y), new Vector2(gridSize.x, y));
     }
 
-    let p1 = new Vector2(GRID_COLS * 0.43, GRID_ROWS * 0.33);
+    let p1 = gridSize.mul(new Vector2(0.43, 0.33));
     ctx.fillStyle = "magenta"
     fillCircle(ctx, p1, 0.2);
     if(p2 !== undefined){
@@ -141,8 +157,8 @@ function grid(ctx: CanvasRenderingContext2D, p2: Vector2 | undefined) {
 
             const c = hittingCell(p1,p2);
             if(
-		c.x < 0 || c.x >= GRID_SIZE.x ||
-		    c.y < 0 || c.y >= GRID_SIZE.y ||
+		c.x < 0 || c.x >= gridSize.x ||
+		    c.y < 0 || c.y >= gridSize.y ||
 		    scene[c.y][c.x] == 1
 	    ){
                 break;
@@ -157,7 +173,12 @@ function grid(ctx: CanvasRenderingContext2D, p2: Vector2 | undefined) {
 
 (() => {
     
-    scene[1][1] = 1;
+    let scene = [
+	[0, 0, 1, 1],
+	[0, 0, 0, 1],
+	[0, 1, 1, 1],
+	[0, 0, 0, 0],
+    ];
     const game = document.getElementById("game") as (HTMLCanvasElement | null);
 
     if(game === null){
@@ -176,11 +197,10 @@ function grid(ctx: CanvasRenderingContext2D, p2: Vector2 | undefined) {
 
     game.addEventListener("mousemove", (event) => {
         p2 = new Vector2(event.offsetX, event.offsetY)
-        .div(canvasSize(ctx)) // value x: 0 to 1 and y: 0 to 1
-        .mul(GRID_SIZE); // value x: 0 to 10 and y: 0 to 10
-        grid(ctx, p2);
+	    .div(canvasSize(ctx)) // value x: 0 to 1 and y: 0 to 1
+	    .mul(sceneSize(scene)); // value x: 0 to 10 and y: 0 to 10
+        minimap(ctx, p2, Vector2.zero(), canvasSize(ctx), scene);
     });
 
-    grid(ctx, p2);
-
+    minimap(ctx, p2, Vector2.zero(), canvasSize(ctx), scene);
 })()
